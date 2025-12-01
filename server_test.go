@@ -13,7 +13,9 @@ func TestGETCustomer(t *testing.T) {
 		request := newGetCustomerBalanceRequest("Mary")
 		response := httptest.NewRecorder()
 
-		CustomerServer(response, request)
+		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		server := &CustomerServer{store: store}
+		server.ServeHTTP(response, request)
 
 		got := response.Body.String()
 		want := "10000"
@@ -24,12 +26,14 @@ func TestGETCustomer(t *testing.T) {
 		request := newGetCustomerBalanceRequest("Adam")
 		response := httptest.NewRecorder()
 
-		CustomerServer(response, request)
-
+		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		server := &CustomerServer{store: store}
+		server.ServeHTTP(response, request)
 		got := response.Body.String()
 		want := "20000"
 		assertCustomerBalance(t, got, want)
 	})
+
 }
 
 func assertCustomerBalance(t testing.TB, got string, want string) {
@@ -43,4 +47,13 @@ func assertCustomerBalance(t testing.TB, got string, want string) {
 func newGetCustomerBalanceRequest(c string) *http.Request {
 	request, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/customer/%s", c), nil)
 	return request
+}
+
+type StubCustomerStore struct {
+	balances map[string]int
+}
+
+func (s *StubCustomerStore) GetCustomerBalance(name string) int {
+	var balance = s.balances[name]
+	return balance
 }

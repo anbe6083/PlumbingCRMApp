@@ -11,20 +11,17 @@ type Customer struct {
 	Balance string
 }
 
-func CustomerServer(w http.ResponseWriter, r *http.Request) {
-	customer := strings.TrimPrefix(r.URL.Path, "/customer/")
-	balance := GetCustomerBalance(customer)
-
-	fmt.Fprint(w, balance)
+type CustomerStore interface {
+	GetCustomerBalance(name string) int
 }
 
-func GetCustomerBalance(c string) string {
-	if c == "Adam" {
-		return "20000"
-	}
-	if c == "Mary" {
-		return "10000"
-	}
+type CustomerServer struct {
+	store CustomerStore
+}
 
-	return ""
+func (c *CustomerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	customer := strings.TrimPrefix(r.URL.Path, "/customer/")
+	balance := c.store.GetCustomerBalance(customer)
+
+	fmt.Fprint(w, balance)
 }
