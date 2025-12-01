@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 )
 
-func CustomerServer(request *http.Request, writer *httptest.ResponseRecorder) {
-	fmt.Fprint(writer, "20000")
+func CustomerServer(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "20000")
 }

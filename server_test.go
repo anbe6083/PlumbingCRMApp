@@ -10,7 +10,7 @@ func TestGETCustomer(t *testing.T) {
 	request, _ := http.NewRequest(http.MethodGet, "/customer/Adam", nil)
 	response := httptest.NewRecorder()
 
-	CustomerServer(request, response)
+	CustomerServer(response, request)
 
 	got := response.Body.String()
 	want := "20000"
