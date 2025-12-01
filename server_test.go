@@ -20,6 +20,7 @@ func TestGETCustomer(t *testing.T) {
 		got := response.Body.String()
 		want := "10000"
 		assertCustomerBalance(t, got, want)
+		assertStatusCode(t, response.Code, http.StatusOK)
 	})
 
 	t.Run("Should get a customer balance for Adam", func(t *testing.T) {
@@ -32,6 +33,18 @@ func TestGETCustomer(t *testing.T) {
 		got := response.Body.String()
 		want := "20000"
 		assertCustomerBalance(t, got, want)
+		assertStatusCode(t, response.Code, http.StatusOK)
+
+	})
+
+	t.Run("Should get a 404 for customers who don't exist", func(t *testing.T) {
+		request := newGetCustomerBalanceRequest("Nancy")
+		response := httptest.NewRecorder()
+
+		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		server := &CustomerServer{store: store}
+		server.ServeHTTP(response, request)
+		assertStatusCode(t, response.Code, NotFoundStatus)
 	})
 
 }
@@ -56,4 +69,10 @@ type StubCustomerStore struct {
 func (s *StubCustomerStore) GetCustomerBalance(name string) int {
 	var balance = s.balances[name]
 	return balance
+}
+
+func assertStatusCode(t testing.TB, got int, want int) {
+	if got != want {
+		t.Errorf("Wrong status code, got %v expected %v", got, want)
+	}
 }

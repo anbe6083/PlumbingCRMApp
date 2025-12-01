@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const NotFoundStatus = http.StatusNotFound
+
 type Customer struct {
 	Name    string
 	Balance string
@@ -22,6 +24,10 @@ type CustomerServer struct {
 func (c *CustomerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	customer := strings.TrimPrefix(r.URL.Path, "/customer/")
 	balance := c.store.GetCustomerBalance(customer)
+
+	if balance == 0 {
+		w.WriteHeader(NotFoundStatus)
+	}
 
 	fmt.Fprint(w, balance)
 }
