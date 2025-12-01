@@ -49,6 +49,19 @@ func TestGETCustomer(t *testing.T) {
 
 }
 
+func TestPOSTCustomer(t *testing.T) {
+	t.Run("Should return accepted on POST", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodPost, "/customer/Tom", nil)
+		response := httptest.NewRecorder()
+
+		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		server := &CustomerServer{store: store}
+		server.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Code, StatusAccepted)
+	})
+}
+
 func assertCustomerBalance(t testing.TB, got string, want string) {
 	t.Helper()
 	if got != want {
