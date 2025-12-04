@@ -7,15 +7,15 @@ import (
 )
 
 type InMemoryCustomerStore struct {
-	balances map[string]int
+	customers []Customer
 }
 
 type InMemoryCustomerServer struct {
 	store CustomerStore
 }
 
-func (i *InMemoryCustomerStore) GetCustomerBalance(name string) int {
-	var balance = 123
+func (i *InMemoryCustomerStore) GetCustomerBalance(name string) float64 {
+	var balance = 123.00
 
 	return balance
 }
@@ -26,4 +26,8 @@ func (i *InMemoryCustomerServer) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	balance := i.store.GetCustomerBalance(customer)
 
 	fmt.Fprint(w, balance)
+}
+
+func (i *InMemoryCustomerStore) GetCustomers() Customers {
+	return nil
 }

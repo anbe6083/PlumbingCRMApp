@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,13 +10,9 @@ import (
 const NotFoundStatus = http.StatusNotFound
 const StatusAccepted = http.StatusAccepted
 
-type Customer struct {
-	Name    string
-	Balance string
-}
-
 type CustomerStore interface {
-	GetCustomerBalance(name string) int
+	GetCustomerBalance(name string) float64
+	GetCustomers() Customers
 }
 
 type CustomerServer struct {
@@ -23,17 +20,10 @@ type CustomerServer struct {
 }
 
 func (c *CustomerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	customer := strings.TrimPrefix(r.URL.Path, "/customer/")
-
-	switch r.Method {
-	case http.MethodGet:
-		c.showBalance(customer, w)
-		return
-	case http.MethodPost:
-		c.processNewCustomer(w)
-		return
-	}
-
+	router := http.NewServeMux()
+	router.Handle("/customers", http.HandlerFunc(c.customerBaseHandler))
+	router.Handle("/customer/", http.HandlerFunc(c.customerHandler))
+	router.ServeHTTP(w, r)
 }
 
 func (c *CustomerServer) showBalance(customer string, w http.ResponseWriter) {
@@ -47,4 +37,26 @@ func (c *CustomerServer) showBalance(customer string, w http.ResponseWriter) {
 
 func (c *CustomerServer) processNewCustomer(w http.ResponseWriter) {
 	w.WriteHeader(StatusAccepted)
+}
+
+func (c *CustomerServer) customerHandler(w http.ResponseWriter, r *http.Request) {
+	customer := strings.TrimPrefix(r.URL.Path, "/customer/")
+	switch r.Method {
+	case http.MethodGet:
+		c.showBalance(customer, w)
+		return
+	case http.MethodPost:
+		c.processNewCustomer(w)
+		return
+	}
+}
+
+func (c *CustomerServer) customerBaseHandler(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(c.getAllCustomers())
+	w.WriteHeader(http.StatusOK)
+}
+
+func (c *CustomerServer) getAllCustomers() []Customer {
+	return c.store.GetCustomers()
+
 }

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -13,7 +16,7 @@ func TestGETCustomer(t *testing.T) {
 		request := newGetCustomerBalanceRequest("Mary")
 		response := httptest.NewRecorder()
 
-		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		store := &StubCustomerStore{[]Customer{{Name: "Mary", Balance: 10000}, {Name: "Adam", Balance: 20000}}}
 		server := &CustomerServer{store: store}
 		server.ServeHTTP(response, request)
 
@@ -27,7 +30,7 @@ func TestGETCustomer(t *testing.T) {
 		request := newGetCustomerBalanceRequest("Adam")
 		response := httptest.NewRecorder()
 
-		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		store := &StubCustomerStore{[]Customer{{Name: "Mary", Balance: 10000}, {Name: "Adam", Balance: 20000}}}
 		server := &CustomerServer{store: store}
 		server.ServeHTTP(response, request)
 		got := response.Body.String()
@@ -41,12 +44,66 @@ func TestGETCustomer(t *testing.T) {
 		request := newGetCustomerBalanceRequest("Nancy")
 		response := httptest.NewRecorder()
 
-		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		store := &StubCustomerStore{[]Customer{{Id: 1, Name: "mary", Balance: 10000}, {Id: 2, Name: "adam", Balance: 20000}}}
 		server := &CustomerServer{store: store}
 		server.ServeHTTP(response, request)
 		assertStatusCode(t, response.Code, NotFoundStatus)
 	})
 
+	t.Run("Should return status ok when getting list of all customers", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/customers", nil)
+		response := httptest.NewRecorder()
+
+		store := &StubCustomerStore{[]Customer{{Id: 1, Name: "mary", Balance: 10000}, {Id: 2, Name: "adam", Balance: 20000}}}
+		server := &CustomerServer{store}
+		server.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Code, http.StatusOK)
+
+	})
+
+	t.Run("Should return a list of all customers", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/customers", nil)
+		response := httptest.NewRecorder()
+
+		store := &StubCustomerStore{[]Customer{{Id: 2, Name: "adam", Balance: 20000}, {Id: 1, Name: "mary", Balance: 10000}}}
+		server := &CustomerServer{store}
+		server.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Code, http.StatusOK)
+		want := []Customer{{Id: 2, Name: "adam", Balance: 20000}, {Id: 1, Name: "mary", Balance: 10000}}
+
+		var got []Customer
+		err := json.NewDecoder(response.Body).Decode(&got)
+		if err != nil {
+			t.Errorf("Problem decoding response.body: %v", err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Wrong customer array returned: Got %v, want %v", got, want)
+		}
+
+	})
+	t.Run("Should return a list of customers sorted by balance", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/customers", nil)
+		response := httptest.NewRecorder()
+
+		store := &StubCustomerStore{[]Customer{{Id: 1, Name: "mary", Balance: 10000}, {Id: 2, Name: "adam", Balance: 20000}}}
+		server := &CustomerServer{store}
+		server.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Code, http.StatusOK)
+		want := []Customer{{Id: 2, Name: "adam", Balance: 20000}, {Id: 1, Name: "mary", Balance: 10000}}
+
+		var got []Customer
+		err := json.NewDecoder(response.Body).Decode(&got)
+		if err != nil {
+			t.Errorf("Problem decoding response.body: %v", err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Wrong customer array returned: Got %v, want %v", got, want)
+		}
+
+	})
 }
 
 func TestPOSTCustomer(t *testing.T) {
@@ -54,12 +111,13 @@ func TestPOSTCustomer(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodPost, "/customer/Tom", nil)
 		response := httptest.NewRecorder()
 
-		store := &StubCustomerStore{map[string]int{"Mary": 10000, "Adam": 20000}}
+		store := &StubCustomerStore{[]Customer{}}
 		server := &CustomerServer{store: store}
 		server.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Code, StatusAccepted)
 	})
+
 }
 
 func assertCustomerBalance(t testing.TB, got string, want string) {
@@ -76,16 +134,35 @@ func newGetCustomerBalanceRequest(c string) *http.Request {
 }
 
 type StubCustomerStore struct {
-	balances map[string]int
+	customers []Customer
 }
 
-func (s *StubCustomerStore) GetCustomerBalance(name string) int {
-	var balance = s.balances[name]
-	return balance
+func (s *StubCustomerStore) GetCustomerBalance(name string) float64 {
+	for _, c := range s.customers {
+		if c.Name == name {
+			return c.Balance
+		}
+	}
+	return 0
 }
 
 func assertStatusCode(t testing.TB, got int, want int) {
 	if got != want {
 		t.Errorf("Wrong status code, got %v expected %v", got, want)
+	}
+}
+
+func (s *StubCustomerStore) GetCustomers() Customers {
+	sort.Slice(s.customers, func(i, j int) bool {
+		return s.customers[i].Balance > s.customers[j].Balance
+	})
+
+	return s.customers
+}
+
+func assertCustomerResponse(t testing.TB, got, want Customer) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Wrong customer returned: Got %v Expected: %v", got, want)
 	}
 }
