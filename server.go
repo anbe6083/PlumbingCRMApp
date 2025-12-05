@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -13,6 +14,7 @@ const StatusAccepted = http.StatusAccepted
 type CustomerStore interface {
 	GetCustomerBalance(name string) float64
 	GetCustomers() Customers
+	RecordNewCustomer(c Customer)
 }
 
 type CustomerServer struct {
@@ -35,8 +37,20 @@ func (c *CustomerServer) showBalance(customer string, w http.ResponseWriter) {
 	fmt.Fprint(w, balance)
 }
 
-func (c *CustomerServer) processNewCustomer(w http.ResponseWriter) {
+func (c *CustomerServer) processNewCustomer(w http.ResponseWriter, r *http.Request) {
+	var customer Customer
+	if r.Body == nil {
+		log.Fatal("Request body is nil")
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&customer)
+	if err != nil {
+		fmt.Errorf("Problem decoding request body: %v", err)
+	}
+	c.store.RecordNewCustomer(customer)
+
 	w.WriteHeader(StatusAccepted)
+	json.NewEncoder(w).Encode(customer)
 }
 
 func (c *CustomerServer) customerHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +60,7 @@ func (c *CustomerServer) customerHandler(w http.ResponseWriter, r *http.Request)
 		c.showBalance(customer, w)
 		return
 	case http.MethodPost:
-		c.processNewCustomer(w)
+		c.processNewCustomer(w, r)
 		return
 	}
 }

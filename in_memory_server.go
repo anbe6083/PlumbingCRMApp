@@ -31,3 +31,7 @@ func (i *InMemoryCustomerServer) ServeHTTP(w http.ResponseWriter, r *http.Reques
 func (i *InMemoryCustomerStore) GetCustomers() Customers {
 	return nil
 }
+
+func (i *InMemoryCustomerStore) RecordNewCustomer(c Customer) {
+
+}

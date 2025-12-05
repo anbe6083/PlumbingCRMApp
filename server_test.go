@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -75,12 +76,8 @@ func TestGETCustomer(t *testing.T) {
 
 		var got []Customer
 		err := json.NewDecoder(response.Body).Decode(&got)
-		if err != nil {
-			t.Errorf("Problem decoding response.body: %v", err)
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Wrong customer array returned: Got %v, want %v", got, want)
-		}
+		assertJsonError(t, err)
+		assertAllCustomerResponse(t, got, want)
 
 	})
 	t.Run("Should return a list of customers sorted by balance", func(t *testing.T) {
@@ -96,19 +93,21 @@ func TestGETCustomer(t *testing.T) {
 
 		var got []Customer
 		err := json.NewDecoder(response.Body).Decode(&got)
-		if err != nil {
-			t.Errorf("Problem decoding response.body: %v", err)
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Wrong customer array returned: Got %v, want %v", got, want)
-		}
-
+		assertJsonError(t, err)
+		assertAllCustomerResponse(t, got, want)
 	})
 }
 
 func TestPOSTCustomer(t *testing.T) {
 	t.Run("Should return accepted on POST", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodPost, "/customer/Tom", nil)
+		customerObj := Customer{Name: "Tom", Balance: 0, Id: 3}
+		marshalledJson, err := json.Marshal(customerObj)
+
+		if err != nil {
+			t.Errorf("Problem marshalling json %v, %v", customerObj, err)
+		}
+
+		request, _ := http.NewRequest(http.MethodPost, "/customer/Tom", bytes.NewReader(marshalledJson))
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{}}
@@ -117,7 +116,30 @@ func TestPOSTCustomer(t *testing.T) {
 
 		assertStatusCode(t, response.Code, StatusAccepted)
 	})
+	t.Run("Should add a new customer", func(t *testing.T) {
+		want := Customer{Name: "Tom", Balance: 0, Id: 3}
+		marshalledJson, err := json.Marshal(want)
 
+		if err != nil {
+			t.Errorf("Problem marshalling json %v, %v", want, err)
+		}
+
+		request, _ := http.NewRequest(http.MethodPost, "/customer/Tom", bytes.NewReader(marshalledJson))
+		response := httptest.NewRecorder()
+
+		store := &StubCustomerStore{[]Customer{}}
+		server := &CustomerServer{store: store}
+		server.ServeHTTP(response, request)
+
+		assertStatusCode(t, response.Code, StatusAccepted)
+
+		var got Customer
+		err = json.NewDecoder(response.Body).Decode(&got)
+		assertJsonError(t, err)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Customer returned is incorrect: Got %v, Want %v", got, want)
+		}
+	})
 }
 
 func assertCustomerBalance(t testing.TB, got string, want string) {
@@ -146,6 +168,10 @@ func (s *StubCustomerStore) GetCustomerBalance(name string) float64 {
 	return 0
 }
 
+func (s *StubCustomerStore) RecordNewCustomer(c Customer) {
+	s.customers = append(s.customers, c)
+}
+
 func assertStatusCode(t testing.TB, got int, want int) {
 	if got != want {
 		t.Errorf("Wrong status code, got %v expected %v", got, want)
@@ -164,5 +190,18 @@ func assertCustomerResponse(t testing.TB, got, want Customer) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Wrong customer returned: Got %v Expected: %v", got, want)
+	}
+}
+
+func assertJsonError(t testing.TB, err error) {
+	t.Helper()
+	if err != nil {
+		t.Errorf("Problem decoding response.body: %v", err)
+	}
+}
+
+func assertAllCustomerResponse(t testing.TB, got, want []Customer) {
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Wrong customer array returned: Got %v, want %v", got, want)
 	}
 }
