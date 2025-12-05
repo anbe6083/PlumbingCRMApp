@@ -102,12 +102,9 @@ func TestPOSTCustomer(t *testing.T) {
 	t.Run("Should return accepted on POST", func(t *testing.T) {
 		customerObj := Customer{Name: "Tom", Balance: 0, Id: 3}
 		marshalledJson, err := json.Marshal(customerObj)
+		assertJsonMarshalError(t, err, customerObj)
 
-		if err != nil {
-			t.Errorf("Problem marshalling json %v, %v", customerObj, err)
-		}
-
-		request, _ := http.NewRequest(http.MethodPost, "/customer/Tom", bytes.NewReader(marshalledJson))
+		request, _ := NewPOSTCustomerRequest(marshalledJson)
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{}}
@@ -119,12 +116,9 @@ func TestPOSTCustomer(t *testing.T) {
 	t.Run("Should add a new customer", func(t *testing.T) {
 		want := Customer{Name: "Tom", Balance: 0, Id: 3}
 		marshalledJson, err := json.Marshal(want)
+		assertJsonMarshalError(t, err, want)
 
-		if err != nil {
-			t.Errorf("Problem marshalling json %v, %v", want, err)
-		}
-
-		request, _ := http.NewRequest(http.MethodPost, "/customer/Tom", bytes.NewReader(marshalledJson))
+		request, _ := NewPOSTCustomerRequest(marshalledJson)
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{}}
@@ -204,4 +198,15 @@ func assertAllCustomerResponse(t testing.TB, got, want []Customer) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Wrong customer array returned: Got %v, want %v", got, want)
 	}
+}
+
+func assertJsonMarshalError(t testing.TB, err error, customer Customer) {
+	if err != nil {
+		t.Errorf("Problem marshalling json %v, %v", customer, err)
+	}
+}
+
+func NewPOSTCustomerRequest(c []byte) (*http.Request, error) {
+	request, err := http.NewRequest(http.MethodPost, "/customer/", bytes.NewReader(c))
+	return request, err
 }
