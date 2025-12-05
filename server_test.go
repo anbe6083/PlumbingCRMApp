@@ -18,7 +18,7 @@ func TestGETCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{{Name: "Mary", Balance: 10000}, {Name: "Adam", Balance: 20000}}}
-		server := &CustomerServer{store: store}
+		server := NewCustomerServer(store)
 		server.ServeHTTP(response, request)
 
 		got := response.Body.String()
@@ -32,7 +32,7 @@ func TestGETCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{{Name: "Mary", Balance: 10000}, {Name: "Adam", Balance: 20000}}}
-		server := &CustomerServer{store: store}
+		server := NewCustomerServer(store)
 		server.ServeHTTP(response, request)
 		got := response.Body.String()
 		want := "20000"
@@ -46,7 +46,7 @@ func TestGETCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{{Id: 1, Name: "mary", Balance: 10000}, {Id: 2, Name: "adam", Balance: 20000}}}
-		server := &CustomerServer{store: store}
+		server := NewCustomerServer(store)
 		server.ServeHTTP(response, request)
 		assertStatusCode(t, response.Code, NotFoundStatus)
 	})
@@ -56,7 +56,7 @@ func TestGETCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{{Id: 1, Name: "mary", Balance: 10000}, {Id: 2, Name: "adam", Balance: 20000}}}
-		server := &CustomerServer{store}
+		server := NewCustomerServer(store)
 		server.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Code, http.StatusOK)
@@ -68,7 +68,7 @@ func TestGETCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{{Id: 2, Name: "adam", Balance: 20000}, {Id: 1, Name: "mary", Balance: 10000}}}
-		server := &CustomerServer{store}
+		server := NewCustomerServer(store)
 		server.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Code, http.StatusOK)
@@ -77,7 +77,7 @@ func TestGETCustomer(t *testing.T) {
 		var got []Customer
 		err := json.NewDecoder(response.Body).Decode(&got)
 		assertJsonError(t, err)
-		assertAllCustomerResponse(t, got, want)
+		AssertAllCustomerResponse(t, got, want)
 
 	})
 	t.Run("Should return a list of customers sorted by balance", func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestGETCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{{Id: 1, Name: "mary", Balance: 10000}, {Id: 2, Name: "adam", Balance: 20000}}}
-		server := &CustomerServer{store}
+		server := NewCustomerServer(store)
 		server.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Code, http.StatusOK)
@@ -94,7 +94,7 @@ func TestGETCustomer(t *testing.T) {
 		var got []Customer
 		err := json.NewDecoder(response.Body).Decode(&got)
 		assertJsonError(t, err)
-		assertAllCustomerResponse(t, got, want)
+		AssertAllCustomerResponse(t, got, want)
 	})
 }
 
@@ -108,7 +108,8 @@ func TestPOSTCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{}}
-		server := &CustomerServer{store: store}
+		server := NewCustomerServer(store)
+
 		server.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Code, StatusAccepted)
@@ -122,7 +123,7 @@ func TestPOSTCustomer(t *testing.T) {
 		response := httptest.NewRecorder()
 
 		store := &StubCustomerStore{[]Customer{}}
-		server := &CustomerServer{store: store}
+		server := NewCustomerServer(store)
 		server.ServeHTTP(response, request)
 
 		assertStatusCode(t, response.Code, StatusAccepted)
@@ -130,9 +131,7 @@ func TestPOSTCustomer(t *testing.T) {
 		var got Customer
 		err = json.NewDecoder(response.Body).Decode(&got)
 		assertJsonError(t, err)
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Customer returned is incorrect: Got %v, Want %v", got, want)
-		}
+		assertCustomerResponse(t, got, want)
 	})
 }
 
@@ -194,7 +193,7 @@ func assertJsonError(t testing.TB, err error) {
 	}
 }
 
-func assertAllCustomerResponse(t testing.TB, got, want []Customer) {
+func AssertAllCustomerResponse(t testing.TB, got, want []Customer) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Wrong customer array returned: Got %v, want %v", got, want)
 	}

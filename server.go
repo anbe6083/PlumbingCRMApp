@@ -19,13 +19,17 @@ type CustomerStore interface {
 
 type CustomerServer struct {
 	store CustomerStore
+	http.Handler
 }
 
-func (c *CustomerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func NewCustomerServer(store CustomerStore) *CustomerServer {
+	c := new(CustomerServer)
+	c.store = store
 	router := http.NewServeMux()
 	router.Handle("/customers", http.HandlerFunc(c.customerBaseHandler))
 	router.Handle("/customer/", http.HandlerFunc(c.customerHandler))
-	router.ServeHTTP(w, r)
+	c.Handler = router
+	return c
 }
 
 func (c *CustomerServer) showBalance(customer string, w http.ResponseWriter) {
