@@ -8,15 +8,15 @@ import (
 
 func TestLocation(t *testing.T) {
 	store := &StubLocationStore{
-		locations: map[string]Location{
-			"Mary":  {name: "10"},
-			"Janet": {name: "20"},
+		locations: map[int]Location{
+			1: {name: "10"},
+			2: {name: "20"},
 		},
 	}
 	server := LocationServer{store: store}
 
 	t.Run("It should return 10 for Mary", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/location/Mary", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/location/1", nil)
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
 
@@ -27,7 +27,7 @@ func TestLocation(t *testing.T) {
 	})
 
 	t.Run("Should return a value and status ok for Janet", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/location/Janet", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/location/2", nil)
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
 
@@ -54,8 +54,8 @@ func TestLocation(t *testing.T) {
 		expected := http.StatusAccepted
 		actual := response.Result().StatusCode
 		assertStatusCode(t, expected, actual)
-
 	})
+
 }
 
 func assertStatusCode(t *testing.T, expected int, actual int) {
@@ -77,9 +77,9 @@ func assertCustomerServerResponse(t *testing.T, expected string, actual string) 
 }
 
 type StubLocationStore struct {
-	locations map[string]Location
+	locations map[int]Location
 }
 
-func (s *StubLocationStore) GetLocation(name string) string {
-	return s.locations[name].name
+func (s *StubLocationStore) GetLocation(id int) string {
+	return s.locations[id].name
 }

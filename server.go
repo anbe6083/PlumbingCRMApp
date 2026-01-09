@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 type LocationStore interface {
-	GetLocation(name string) string
+	GetLocation(id int) string
 }
 
 type LocationServer struct {
@@ -15,22 +16,22 @@ type LocationServer struct {
 }
 
 func (ls *LocationServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	name := strings.TrimPrefix(r.URL.Path, "/location/")
+	id, _ := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/location/"))
 	switch r.Method {
 	case http.MethodGet:
-		locationId := ls.store.GetLocation(name)
-		if locationId == "" {
-			w.WriteHeader(http.StatusNotFound)
-		} else {
-			ls.processGetRequest(w, name)
-		}
+		ls.processGetRequest(w, id)
 	case http.MethodPost:
 		ls.processPostRequest(w)
 	}
 }
 
-func (ls *LocationServer) processGetRequest(w http.ResponseWriter, name string) {
-	fmt.Fprint(w, ls.store.GetLocation(name))
+func (ls *LocationServer) processGetRequest(w http.ResponseWriter, id int) {
+	locationId := ls.store.GetLocation(id)
+	if locationId == "" {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		fmt.Fprint(w, ls.store.GetLocation(id))
+	}
 }
 
 func (ls *LocationServer) processPostRequest(w http.ResponseWriter) {
