@@ -1,7 +1,8 @@
 package main
 
 type Location struct {
-	name string
+	Name string
+	Id   int
 }
 
 type Address struct {

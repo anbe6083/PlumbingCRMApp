@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 type LocationStore interface {
 	GetLocation(id int) string
+	AddLocation(location Location)
 }
 
 type LocationServer struct {
@@ -21,7 +23,7 @@ func (ls *LocationServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		ls.processGetRequest(w, id)
 	case http.MethodPost:
-		ls.processPostRequest(w)
+		ls.processPostRequest(w, r)
 	}
 }
 
@@ -34,7 +36,13 @@ func (ls *LocationServer) processGetRequest(w http.ResponseWriter, id int) {
 	}
 }
 
-func (ls *LocationServer) processPostRequest(w http.ResponseWriter) {
+func (ls *LocationServer) processPostRequest(w http.ResponseWriter, r *http.Request) {
+	var location Location
+	if err := json.NewDecoder(r.Body).Decode(&location); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	ls.store.AddLocation(location)
 
 	w.WriteHeader(http.StatusAccepted)
 }

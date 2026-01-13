@@ -6,3 +6,7 @@ type InMemoryLocationStore struct {
 func (i *InMemoryLocationStore) GetLocation(id int) string {
 	return "location name"
 }
+
+func (i *InMemoryLocationStore) AddLocation(location Location) {
+
+}
