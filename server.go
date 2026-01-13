@@ -9,7 +9,7 @@ import (
 )
 
 type LocationStore interface {
-	GetLocation(id int) string
+	GetLocation(id int) Location
 	AddLocation(location Location)
 }
 
@@ -28,11 +28,11 @@ func (ls *LocationServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ls *LocationServer) processGetRequest(w http.ResponseWriter, id int) {
-	locationId := ls.store.GetLocation(id)
-	if locationId == "" {
+	location := ls.store.GetLocation(id)
+	if location.Id == 0 {
 		w.WriteHeader(http.StatusNotFound)
 	} else {
-		fmt.Fprint(w, ls.store.GetLocation(id))
+		fmt.Fprint(w, location.Name)
 	}
 }
 

@@ -1,19 +1,16 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 )
 
 func TestLocation(t *testing.T) {
 	store := &StubLocationStore{
 		locations: map[int]Location{
-			1: {Name: "10"},
-			2: {Name: "20"},
+			1: {Name: "10", Id: 1},
+			2: {Name: "20", Id: 2},
 		},
 	}
 	server := LocationServer{store: store}
@@ -54,17 +51,13 @@ func TestLocation(t *testing.T) {
 			Name: "Lisa",
 			Id:   4,
 		}
-		body, _ := json.Marshal(expected)
-		request, _ := http.NewRequest(http.MethodPost, "/location", bytes.NewBuffer(body))
 		response := httptest.NewRecorder()
-		server.ServeHTTP(response, request)
+		server.ServeHTTP(response, NewPostLocationRequest(expected))
 		assertStatusCode(t, http.StatusAccepted, response.Result().StatusCode)
 		if len(store.locations) != 3 {
 			t.Errorf("New location was not added. Got locations store of length %d, expected %d", len(store.locations), 3)
 		}
-		if !reflect.DeepEqual(expected, store.locations[expected.Id]) {
-			t.Errorf("Wrong map entry. Got %q expected %q", store.locations[expected.Id], expected)
-		}
+		assertLocationMap(t, expected, store.locations[expected.Id])
 	})
 }
 
@@ -90,8 +83,8 @@ type StubLocationStore struct {
 	locations map[int]Location
 }
 
-func (s *StubLocationStore) GetLocation(id int) string {
-	return s.locations[id].Name
+func (s *StubLocationStore) GetLocation(id int) Location {
+	return s.locations[id]
 }
 
 func (s *StubLocationStore) AddLocation(location Location) {
