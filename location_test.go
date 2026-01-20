@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -64,6 +65,14 @@ func TestLocation(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/locations", nil)
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
+
+		var got []Location
+
+		err := json.NewDecoder(response.Body).Decode(&got)
+
+		if err != nil {
+			t.Errorf("Problem parsing response from server %q into slice of Location, %v", response.Body, err)
+		}
 
 		assertStatusCode(t, http.StatusOK, response.Code)
 	})

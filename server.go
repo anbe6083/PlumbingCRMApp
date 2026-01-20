@@ -31,6 +31,8 @@ func NewLocationServer(store LocationStore) *LocationServer {
 }
 
 func (ls *LocationServer) processGetAllLocationsReq(w http.ResponseWriter, r *http.Request) {
+
+	json.NewEncoder(w).Encode(ls.getLocations())
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -62,4 +64,12 @@ func (ls *LocationServer) processPostRequest(w http.ResponseWriter, r *http.Requ
 	ls.store.AddLocation(location)
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (ls *LocationServer) getLocations() []Location {
+	locations := []Location{
+		1: {Name: "10", Id: 1},
+		2: {Name: "20", Id: 2},
+	}
+	return locations
 }
