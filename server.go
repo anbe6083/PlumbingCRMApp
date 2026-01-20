@@ -15,20 +15,26 @@ type LocationStore interface {
 
 type LocationServer struct {
 	store LocationStore
+	http.Handler
 }
 
-func (ls *LocationServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func NewLocationServer(store LocationStore) *LocationServer {
+	server := &LocationServer{}
+	server.store = store
+
 	router := http.NewServeMux()
-	router.Handle("/locations", http.HandlerFunc(ls.processGetLocations))
-	router.Handle("/location/", http.HandlerFunc(ls.processGetLocation))
-	router.ServeHTTP(w, r)
+	router.Handle("/locations", http.HandlerFunc(server.processGetAllLocationsReq))
+	router.Handle("/location/", http.HandlerFunc(server.processLocationReq))
+
+	server.Handler = router
+	return server
 }
 
-func (ls *LocationServer) processGetLocations(w http.ResponseWriter, r *http.Request) {
+func (ls *LocationServer) processGetAllLocationsReq(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (ls *LocationServer) processGetLocation(w http.ResponseWriter, r *http.Request) {
+func (ls *LocationServer) processLocationReq(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/location/"))
 	switch r.Method {
 	case http.MethodGet:

@@ -7,13 +7,13 @@ import (
 )
 
 func TestLocation(t *testing.T) {
-	store := &StubLocationStore{
+	store := StubLocationStore{
 		locations: map[int]Location{
 			1: {Name: "10", Id: 1},
 			2: {Name: "20", Id: 2},
 		},
 	}
-	server := LocationServer{store: store}
+	server := NewLocationServer(&store)
 
 	t.Run("It should return 10 for Mary", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/location/1", nil)

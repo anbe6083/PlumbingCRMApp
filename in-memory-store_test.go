@@ -9,7 +9,7 @@ func TestInMemoryStore(t *testing.T) {
 	store := &InMemoryLocationStore{
 		locations: map[int]Location{},
 	}
-	server := LocationServer{store: store}
+	server := NewLocationServer(store)
 	locations := []Location{
 		{Name: "Nancy", Id: 1},
 		{Name: "Steph", Id: 2},
