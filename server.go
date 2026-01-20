@@ -11,6 +11,7 @@ import (
 type LocationStore interface {
 	GetLocation(id int) Location
 	AddLocation(location Location)
+	GetLocations() []Location
 }
 
 type LocationServer struct {
@@ -67,9 +68,5 @@ func (ls *LocationServer) processPostRequest(w http.ResponseWriter, r *http.Requ
 }
 
 func (ls *LocationServer) getLocations() []Location {
-	locations := []Location{
-		1: {Name: "10", Id: 1},
-		2: {Name: "20", Id: 2},
-	}
-	return locations
+	return ls.store.GetLocations()
 }

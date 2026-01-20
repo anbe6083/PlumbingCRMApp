@@ -4,19 +4,20 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
 func TestLocation(t *testing.T) {
-	store := StubLocationStore{
-		locations: map[int]Location{
-			1: {Name: "10", Id: 1},
-			2: {Name: "20", Id: 2},
-		},
-	}
-	server := NewLocationServer(&store)
 
 	t.Run("It should return 10 for Mary", func(t *testing.T) {
+		store := StubLocationStore{
+			locations: map[int]Location{
+				1: {Name: "10", Id: 1},
+				2: {Name: "20", Id: 2},
+			},
+		}
+		server := NewLocationServer(&store)
 		request, _ := http.NewRequest(http.MethodGet, "/location/1", nil)
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
@@ -28,6 +29,13 @@ func TestLocation(t *testing.T) {
 	})
 
 	t.Run("Should return a value and status ok for Janet", func(t *testing.T) {
+		store := StubLocationStore{
+			locations: map[int]Location{
+				1: {Name: "10", Id: 1},
+				2: {Name: "20", Id: 2},
+			},
+		}
+		server := NewLocationServer(&store)
 		request, _ := http.NewRequest(http.MethodGet, "/location/2", nil)
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
@@ -38,6 +46,13 @@ func TestLocation(t *testing.T) {
 		assertStatusCode(t, http.StatusOK, response.Result().StatusCode)
 	})
 	t.Run("Should return a 404 for GET request where user doesnt exist", func(t *testing.T) {
+		store := StubLocationStore{
+			locations: map[int]Location{
+				1: {Name: "10", Id: 1},
+				2: {Name: "20", Id: 2},
+			},
+		}
+		server := NewLocationServer(&store)
 		request, _ := http.NewRequest(http.MethodGet, "/location/Mark", nil)
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
@@ -48,6 +63,13 @@ func TestLocation(t *testing.T) {
 	})
 
 	t.Run("Should return status accepted on POSt request", func(t *testing.T) {
+		store := StubLocationStore{
+			locations: map[int]Location{
+				1: {Name: "10", Id: 1},
+				2: {Name: "20", Id: 2},
+			},
+		}
+		server := NewLocationServer(&store)
 		expected := Location{
 			Name: "Lisa",
 			Id:   4,
@@ -62,6 +84,14 @@ func TestLocation(t *testing.T) {
 	})
 
 	t.Run("/locations should return 200", func(t *testing.T) {
+		store := StubLocationStore{
+			locations: map[int]Location{
+				1: {Name: "10", Id: 1},
+				2: {Name: "20", Id: 2},
+			},
+		}
+		server := NewLocationServer(&store)
+		wantedLocations := []Location{{Name: "10", Id: 1}, {Name: "20", Id: 2}}
 		request, _ := http.NewRequest(http.MethodGet, "/locations", nil)
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
@@ -75,6 +105,9 @@ func TestLocation(t *testing.T) {
 		}
 
 		assertStatusCode(t, http.StatusOK, response.Code)
+		if !reflect.DeepEqual(got, wantedLocations) {
+			t.Errorf("Got %v, expected %v", got, wantedLocations)
+		}
 	})
 
 }
@@ -107,4 +140,12 @@ func (s *StubLocationStore) GetLocation(id int) Location {
 
 func (s *StubLocationStore) AddLocation(location Location) {
 	s.locations[location.Id] = location
+}
+
+func (s *StubLocationStore) GetLocations() []Location {
+	locations := []Location{}
+	for _, values := range s.locations {
+		locations = append(locations, values)
+	}
+	return locations
 }
