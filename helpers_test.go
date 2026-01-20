@@ -10,7 +10,7 @@ import (
 
 func NewPostLocationRequest(location Location) *http.Request {
 	body, _ := json.Marshal(location)
-	request, _ := http.NewRequest(http.MethodPost, "/location", bytes.NewBuffer(body))
+	request, _ := http.NewRequest(http.MethodPost, "/location/", bytes.NewBuffer(body))
 	return request
 }
 

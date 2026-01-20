@@ -18,6 +18,21 @@ type LocationServer struct {
 }
 
 func (ls *LocationServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	router := http.NewServeMux()
+	router.Handle("/locations", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ls.processGetLocations(w)
+	}))
+	router.Handle("/location/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ls.processGetLocation(w, r)
+	}))
+	router.ServeHTTP(w, r)
+}
+
+func (ls *LocationServer) processGetLocations(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (ls *LocationServer) processGetLocation(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/location/"))
 	switch r.Method {
 	case http.MethodGet:

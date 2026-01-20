@@ -59,6 +59,15 @@ func TestLocation(t *testing.T) {
 		}
 		assertLocationMap(t, expected, store.locations[expected.Id])
 	})
+
+	t.Run("/locations should return 200", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/locations", nil)
+		response := httptest.NewRecorder()
+		server.ServeHTTP(response, request)
+
+		assertStatusCode(t, http.StatusOK, response.Code)
+	})
+
 }
 
 func assertStatusCode(t *testing.T, expected int, actual int) {
